@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestion de Stock</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A403C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F4EF;
+    --ink:#1C2321;
+    --ink-soft:#5B655F;
+    --line:#D8D3C6;
+    --teal:#0F5C56;
+    --teal-dark:#0A403C;
+    --teal-tint:#E3EEEC;
+    --ochre:#C97D0F;
+    --ochre-tint:#F7E9D3;
+    --danger:#B23B2E;
+    --danger-tint:#F6E2DE;
+    --card:#FFFFFF;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(28,35,33,0.06), 0 4px 14px rgba(28,35,33,0.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .num{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; }
+  button{ font-family:'Inter',sans-serif; cursor:pointer; }
+  input,select,textarea{ font-family:'Inter',sans-serif; }
+  ::selection{ background:var(--ochre-tint); }
+
+  /* ---------- Login / Signup ---------- */
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(15,92,86,0.10), transparent 45%),
+      radial-gradient(circle at 80% 85%, rgba(201,125,15,0.10), transparent 45%),
+      var(--paper);
+    padding:24px;
+  }
+  .login-card{
+    width:100%;
+    max-width:380px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:36px 32px;
+  }
+  .login-mark{
+    width:44px;height:44px;border-radius:9px;
+    background:var(--teal);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Source Serif 4',serif; font-size:20px; font-weight:700;
+    margin-bottom:18px;
+  }
+  .login-card h1{ font-size:22px; margin-bottom:4px; }
+  .login-sub{ color:var(--ink-soft); font-size:13px; margin-bottom:20px; }
+  .auth-tabs{ display:flex; border:1px solid var(--line); border-radius:8px; padding:3px; margin-bottom:20px; background:#F0EDE5; }
+  .auth-tab{ flex:1; padding:8px 10px; border:none; background:transparent; border-radius:6px; font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+  .auth-tab.active{ background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,0.06); }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; }
+  .field input, .field select, .field textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#fff;
+    color:var(--ink);
+    font-size:14px;
+    outline:none;
+    transition:border-color .12s ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    border-color:var(--teal);
+    box-shadow:0 0 0 3px var(--teal-tint);
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:10px 16px;
+    border-radius:7px;
+    border:1px solid transparent;
+    font-size:13.5px; font-weight:600;
+    transition:transform .05s ease, background .12s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .btn-primary{ background:var(--teal); color:#fff; }
+  .btn-primary:hover{ background:var(--teal-dark); }
+  .btn-full{ width:100%; }
+  .btn-ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn-ghost:hover{ background:#F0EDE5; }
+  .btn-danger{ background:var(--danger); color:#fff; }
+  .btn-danger:hover{ background:#8f2e23; }
+  .btn-sm{ padding:6px 10px; font-size:12.5px; border-radius:6px; }
+  .btn-link{ background:none; border:none; color:var(--teal-dark); font-size:12.5px; font-weight:600; padding:0; text-decoration:underline; }
+  .form-msg{ border-radius:7px; padding:9px 12px; font-size:13px; margin-bottom:14px; display:none; }
+  .form-msg.err{ background:var(--danger-tint); color:var(--danger); }
+  .form-msg.ok{ background:var(--teal-tint); color:var(--teal-dark); }
+  .login-hint{ margin-top:16px; font-size:11.5px; color:var(--ink-soft); border-top:1px dashed var(--line); padding-top:12px; text-align:center; }
+
+  /* ---------- Setup notice (Firebase not configured) ---------- */
+  #setup-screen, #pending-screen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .setup-card{ max-width:560px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:32px; }
+  .setup-card h1{ font-size:20px; margin-bottom:10px; }
+  .setup-card p{ font-size:13.5px; color:var(--ink-soft); margin:0 0 10px; }
+  .setup-card code{ background:#F0EDE5; padding:2px 6px; border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
+  .setup-card ol{ padding-left:20px; font-size:13.5px; color:var(--ink); }
+  .setup-card li{ margin-bottom:6px; }
+
+  /* ---------- App shell ---------- */
+  #app{ display:none; min-height:100vh; }
+  .shell{ display:flex; min-height:100vh; }
+  .sidebar{
+    width:216px;
+    flex-shrink:0;
+    background:var(--teal-dark);
+    color:#EAF3F1;
+    display:flex; flex-direction:column;
+    padding:20px 14px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 8px 22px; }
+  .brand-mark{ width:30px;height:30px;border-radius:7px; background:var(--ochre); display:flex;align-items:center;justify-content:center; font-family:'Source Serif 4',serif; font-weight:700; color:#2A1B03; }
+  .brand-name{ font-family:'Source Serif 4',serif; font-size:15.5px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:7px;
+    color:#CFE3DF; font-size:13.5px; font-weight:500;
+    margin-bottom:2px;
+    border:none; background:transparent; width:100%; text-align:left;
+  }
+  .nav-item .ic{ font-size:15px; width:18px; text-align:center; }
+  .nav-item:hover{ background:rgba(255,255,255,0.06); color:#fff; }
+  .nav-item.active{ background:rgba(255,255,255,0.12); color:#fff; }
+  .nav-section-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:#7FA39D; margin:14px 10px 6px; }
+  .sidebar-foot{ margin-top:auto; padding:10px 8px 4px; border-top:1px solid rgba(255,255,255,0.1); }
+  .sidebar-foot .who{ font-size:12.5px; color:#EAF3F1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sidebar-foot .btn{ margin-top:8px; width:100%; background:rgba(255,255,255,0.08); color:#EAF3F1; border-color:rgba(255,255,255,0.14); }
+  .sidebar-foot .btn:hover{ background:rgba(255,255,255,0.16); }
+
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px; border-bottom:1px solid var(--line);
+    background:var(--paper);
+    position:sticky; top:0; z-index:5;
+  }
+  .topbar h2{ font-size:19px; }
+  .topbar .sub{ color:var(--ink-soft); font-size:12.5px; margin-top:2px; }
+  .content{ padding:24px 28px 48px; flex:1; }
+
+  .alert-banner{
+    display:flex; align-items:center; gap:10px;
+    background:var(--danger-tint); color:#7A2C22;
+    border:1px solid #E4B7AB; border-radius:9px;
+    padding:11px 14px; margin-bottom:20px; font-size:13px;
+  }
+  .alert-banner b{ font-weight:700; }
+  .alert-banner button{ margin-left:auto; }
+
+  .kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .kpi-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; }
+  .kpi-label{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; }
+  .kpi-value{ font-size:22px; font-weight:600; }
+  .kpi-value.warn{ color:var(--danger); }
+  .kpi-note{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; }
+
+  .panel-row{ display:grid; grid-template-columns:1.4fr 1fr; gap:16px; align-items:start; }
+  .panel{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); }
+  .panel-head h3{ font-size:15px; }
+  .panel-body{ padding:16px 18px; }
+
+  .bars{ display:flex; align-items:flex-end; gap:8px; height:140px; padding-top:6px; }
+  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .bar{ width:100%; background:var(--teal); border-radius:4px 4px 0 0; min-height:2px; }
+  .bar-lbl{ font-size:10.5px; color:var(--ink-soft); }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  thead th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); border-bottom:1px solid var(--line); padding:8px 10px; font-weight:600; }
+  tbody td{ padding:10px 10px; border-bottom:1px solid #EEEAE0; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#FAF8F3; }
+  tbody tr.row-low td{ background:var(--danger-tint); }
+  .tright{ text-align:right; }
+  .tag{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+  .tag-low{ background:var(--danger-tint); color:var(--danger); }
+  .tag-ok{ background:var(--teal-tint); color:var(--teal-dark); }
+
+  .toolbar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .search-box{ position:relative; flex:1; min-width:200px; max-width:320px; }
+  .search-box input{ width:100%; padding:9px 12px 9px 30px; border:1px solid var(--line); border-radius:7px; background:#fff; font-size:13px; }
+  .search-box::before{ content:"⌕"; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-soft); font-size:14px; }
+  .spacer{ flex:1; }
+
+  .empty-state{ text-align:center; padding:40px 20px; color:var(--ink-soft); }
+  .empty-state .ic{ font-size:26px; margin-bottom:8px; }
+
+  /* Modal */
+  .modal-veil{ position:fixed; inset:0; background:rgba(28,35,33,0.42); display:none; align-items:flex-start; justify-content:center; padding:5vh 16px; overflow-y:auto; z-index:50; }
+  .modal-veil.show{ display:flex; }
+  .modal{ background:#fff; border-radius:12px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.25); margin-bottom:5vh; }
+  .modal.wide{ max-width:640px; }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line); }
+  .modal-head h3{ font-size:16px; }
+  .modal-close{ background:none; border:none; font-size:18px; color:var(--ink-soft); padding:2px 6px; }
+  .modal-body{ padding:18px 20px; max-height:65vh; overflow-y:auto; }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--line); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .line-item{ display:grid; grid-template-columns:1fr 80px 100px 34px; gap:8px; align-items:center; margin-bottom:8px; }
+  .line-total{ font-family:'IBM Plex Mono',monospace; font-size:13px; text-align:right; }
+  .mini-x{ background:none; border:none; color:var(--danger); font-size:16px; }
+  .sale-total-row{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--line); margin-top:12px; padding-top:12px; }
+  .sale-total-row .amt{ font-size:20px; font-weight:700; font-family:'IBM Plex Mono',monospace; }
+
+  /* Receipt */
+  .receipt{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#222; padding:6px 4px; }
+  .receipt-head{ text-align:center; margin-bottom:14px; }
+  .receipt-head .biz{ font-family:'Source Serif 4',serif; font-size:16px; font-weight:700; }
+  .receipt-head .loc{ font-size:11px; color:#555; margin-top:2px; }
+  .receipt hr{ border:none; border-top:1px dashed #999; margin:10px 0; }
+  .receipt-row{ display:flex; justify-content:space-between; margin-bottom:3px; }
+  .receipt-items .receipt-row{ align-items:flex-start; }
+  .receipt-items .nm{ flex:1; padding-right:8px; }
+  .receipt-total{ font-size:14px; font-weight:700; }
+  .receipt-foot{ text-align:center; margin-top:14px; font-size:11px; color:#555; }
+
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; padding:10px 18px; border-radius:8px; font-size:13px; opacity:0; transition:all .18s ease; pointer-events:none; z-index:100; max-width:90vw; text-align:center; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .loading-veil{ position:fixed; inset:0; background:var(--paper); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; z-index:200; }
+  .spinner{ width:26px;height:26px;border-radius:50%; border:3px solid var(--line); border-top-color:var(--teal); animation:spin .7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  @media (max-width: 880px){
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+    .panel-row{ grid-template-columns:1fr; }
+    .sidebar{ width:76px; }
+    .brand-name, .nav-item span.lbl, .nav-section-label, .sidebar-foot .who, .sidebar-foot .btn span.lbl{ display:none; }
+    .nav-item{ justify-content:center; }
+    .sidebar-foot .btn{ padding:8px; }
+  }
+  @media print{
+    body *{ visibility:hidden; }
+    #print-area, #print-area *{ visibility:visible; }
+    #print-area{ position:absolute; top:0; left:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-veil" class="loading-veil">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--ink-soft)">Chargement…</div>
+</div>
+
+<!-- SETUP NOTICE (shown if Firebase config is not filled in) -->
+<div id="setup-screen" style="display:none;">
+  <div class="setup-card">
+    <h1>⚙️ Configuration requise</h1>
+    <p>Ce logiciel utilise Firebase (gratuit) pour stocker les données en ligne et les partager entre les employés d'une même structure. La configuration n'a pas encore été renseignée dans le fichier.</p>
+    <ol>
+      <li>Créez un projet sur <code>console.firebase.google.com</code></li>
+      <li>Activez <b>Authentication</b> → méthode <b>Email/Mot de passe</b></li>
+      <li>Activez <b>Firestore Database</b> (mode production)</li>
+      <li>Copiez la configuration du projet (icône Web <code>&lt;/&gt;</code>) dans la constante <code>firebaseConfig</code> en haut du fichier</li>
+      <li>Appliquez les règles de sécurité Firestore fournies séparément</li>
+    </ol>
+  </div>
+</div>
+
+<!-- PENDING / COMPTE INACTIF -->
+<div id="pending-screen" style="display:none;">
+  <div class="setup-card" style="text-align:center;max-width:420px;">
+    <h1 id="pending-title">⏳ Compte en attente d'activation</h1>
+    <p id="pending-message">Votre inscription a bien été enregistrée. Votre accès sera activé par l'administrateur après confirmation du paiement de votre forfait.</p>
+    <p style="margin-top:16px;">Forfait : <strong id="pending-plan-label">Essai</strong></p>
+    <button class="btn btn-ghost" style="margin-top:18px;" onclick="handleLogout()">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- LOGIN / SIGNUP -->
+<div id="login-screen" style="display:none;">
+  <div class="login-card">
+    <div class="login-mark">S</div>
+    <h1>Gestion de Stock</h1>
+    <div class="login-sub">Plateforme de gestion pour structures commerciales</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Se connecter</button>
+      <button class="auth-tab" id="tab-signup" onclick="setAuthMode('signup')">Créer un compte</button>
+    </div>
+
+    <div class="form-msg" id="auth-msg"></div>
+
+    <div id="form-login">
+      <div class="field"><label>Email</label><input type="email" id="li-email" placeholder="vous@structure.com" autocomplete="username"></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary btn-full" onclick="handleLogin()">Se connecter</button>
+      <div style="text-align:center;margin-top:12px;"><button class="btn-link" onclick="handleForgotPassword()">Mot de passe oublié ?</button></div>
+    </div>
+
+    <div id="form-signup" style="display:none;">
+      <div class="field"><label>Nom de la structure</label><input type="text" id="su-biz" placeholder="Ex : Braka Technologie"></div>
+      <div class="field"><label>Email administrateur</label><input type="email" id="su-email" placeholder="vous@structure.com" autocomplete="username"></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="su-pass" placeholder="6 caractères minimum" autocomplete="new-password"></div>
+      <div class="field"><label>Confirmer le mot de passe</label><input type="password" id="su-pass2" placeholder="••••••••" autocomplete="new-password"></div>
+      <button class="btn btn-primary btn-full" onclick="handleSignup()">Créer le compte</button>
+      <div class="login-hint">Ce compte devient l'accès administrateur de votre structure. Partagez ces identifiants avec vos employés pour qu'ils accèdent aux mêmes données.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">S</div>
+        <div class="brand-name" id="sidebar-biz-name">Gestion Stock</div>
+      </div>
+      <button class="nav-item active" data-view="dashboard" onclick="setView('dashboard')"><span class="ic">▤</span><span class="lbl">Tableau de bord</span></button>
+      <button class="nav-item" data-view="produits" onclick="setView('produits')"><span class="ic">▧</span><span class="lbl">Produits</span></button>
+      <button class="nav-item" data-view="entrees" onclick="setView('entrees')"><span class="ic">＋</span><span class="lbl">Entrées de stock</span></button>
+      <button class="nav-item" data-view="ventes" onclick="setView('ventes')"><span class="ic">⛁</span><span class="lbl">Ventes</span></button>
+      <button class="nav-item" data-view="clients" onclick="setView('clients')"><span class="ic">☺</span><span class="lbl">Clients</span></button>
+      <button class="nav-item" data-view="bilan" onclick="setView('bilan')"><span class="ic">◫</span><span class="lbl">Bilan &amp; statistiques</span></button>
+      <div class="nav-section-label">Système</div>
+      <button class="nav-item" data-view="parametres" onclick="setView('parametres')"><span class="ic">⚙</span><span class="lbl">Paramètres</span></button>
+      <button class="nav-item" data-view="admin" onclick="setView('admin')" style="display:none;"><span class="ic">🛡</span><span class="lbl">Administration</span></button>
+      <div class="sidebar-foot">
+        <div class="who" id="sidebar-user-email">—</div>
+        <button class="btn btn-sm" onclick="handleLogout()"><span class="lbl">Se déconnecter</span></button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="view-title">Tableau de bord</h2>
+          <div class="sub" id="view-sub">Aperçu de l'activité</div>
+        </div>
+        <div id="topbar-actions"></div>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Generic modal -->
+<div class="modal-veil" id="modal-veil">
+  <div class="modal" id="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-title">Titre</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* =======================================================================
+   CONFIGURATION FIREBASE — À REMPLIR AVANT LA MISE EN LIGNE
+   1. console.firebase.google.com → créer un projet (gratuit)
+   2. Authentication → Sign-in method → activer "Email/Password"
+   3. Firestore Database → créer une base (mode production)
+   4. Paramètres du projet → icône Web </> → copier la config ci-dessous
+   5. Appliquer les règles de sécurité Firestore fournies avec ce fichier
+   ======================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDRoNsEI6R838gwFdmVsk4CUt1NGtfd7Pw",
+  authDomain: "vision-gestion-1b0bc.firebaseapp.com",
+  projectId: "vision-gestion-1b0bc",
+  storageBucket: "vision-gestion-1b0bc.firebasestorage.app",
+  messagingSenderId: "160418568313",
+  appId: "1:160418568313:web:262e65cd4dafd9b543dca8"
+};
+
+const CONFIG_IS_PLACEHOLDER = (firebaseConfig.apiKey === "YOUR_API_KEY_HERE");
+
+let auth, db;
+let STATE = {
+  settings: { businessName: 'Ma structure', businessLoc: '', plan: 'essai', active: false },
+  products: [], stockEntries: [], sales: [], clients: []
+};
+let currentTenantId = null;
+let unsubscribers = [];
+let isSuperAdmin = false;
+let allTenants = [];
+const PLAN_LABELS = { essai: 'Essai', basique: 'Basique', standard: 'Standard', premium: 'Premium' };
+
+/* ============================= UTIL ============================= */
+function fmtMoney(n){
+  n = Math.round(Number(n)||0);
+  return n.toLocaleString('fr-FR').replace(/\u202F|\u00A0/g,' ') + ' FCFA';
+}
+function fmtNum(n){ return Number(n||0).toLocaleString('fr-FR'); }
+function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+function todayISO(){ return new Date().toISOString(); }
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+function findProduct(id){ return STATE.products.find(p=>p.id===id); }
+function findClient(id){ return STATE.clients.find(c=>c.id===id); }
+function lowStockProducts(){ return STATE.products.filter(p => Number(p.stock) <= Number(p.alertThreshold)); }
+
+function authErrorMessage(err){
+  const map = {
+    'auth/invalid-email': "Adresse email invalide.",
+    'auth/user-disabled': "Ce compte a été désactivé.",
+    'auth/user-not-found': "Aucun compte ne correspond à cet email.",
+    'auth/wrong-password': "Mot de passe incorrect.",
+    'auth/invalid-credential': "Email ou mot de passe incorrect.",
+    'auth/email-already-in-use': "Un compte existe déjà avec cet email.",
+    'auth/weak-password': "Le mot de passe doit contenir au moins 6 caractères.",
+    'auth/too-many-requests': "Trop de tentatives. Réessayez dans quelques minutes.",
+    'auth/network-request-failed': "Problème de connexion réseau."
+  };
+  return map[err.code] || ("Erreur : " + (err.message || 'inconnue'));
+}
+
+/* ============================= AUTH ============================= */
+let authMode = 'login';
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('form-login').style.display = mode==='login' ? 'block' : 'none';
+  document.getElementById('form-signup').style.display = mode==='signup' ? 'block' : 'none';
+  hideAuthMsg();
+}
+function showAuthMsg(text, type){
+  const el = document.getElementById('auth-msg');
+  el.textContent = text;
+  el.className = 'form-msg show ' + (type==='ok'?'ok':'err');
+  el.style.display = 'block';
+}
+function hideAuthMsg(){ document.getElementById('auth-msg').style.display = 'none'; }
+
+async function handleLogin(){
+  hideAuthMsg();
+  const email = document.getElementById('li-email').value.trim();
+  const pass = document.getElementById('li-pass').value;
+  if(!email || !pass){ showAuthMsg('Renseignez votre email et votre mot de passe.'); return; }
+  try{
+    await auth.signInWithEmailAndPassword(email, pass);
+  }catch(err){
+    showAuthMsg(authErrorMessage(err));
+  }
+}
+
+async function handleSignup(){
+  hideAuthMsg();
+  const biz = document.getElementById('su-biz').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass = document.getElementById('su-pass').value;
+  const pass2 = document.getElementById('su-pass2').value;
+  if(!biz){ showAuthMsg('Le nom de la structure est requis.'); return; }
+  if(!email || !pass){ showAuthMsg('Renseignez un email et un mot de passe.'); return; }
+  if(pass.length < 6){ showAuthMsg('Le mot de passe doit contenir au moins 6 caractères.'); return; }
+  if(pass !== pass2){ showAuthMsg('Les mots de passe ne correspondent pas.'); return; }
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await db.collection('tenants').doc(cred.user.uid).set({
+      businessName: biz,
+      businessLoc: '',
+      adminEmail: email,
+      plan: 'essai',
+      active: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // onAuthStateChanged takes over from here
+  }catch(err){
+    showAuthMsg(authErrorMessage(err));
+  }
+}
+
+async function handleForgotPassword(){
+  const email = document.getElementById('li-email').value.trim();
+  if(!email){ showAuthMsg('Saisissez votre email ci-dessus, puis cliquez à nouveau sur ce lien.'); return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    showAuthMsg('Email de réinitialisation envoyé à ' + email + '.', 'ok');
+  }catch(err){
+    showAuthMsg(authErrorMessage(err));
+  }
+}
+
+function handleLogout(){
+  auth.signOut();
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter') return;
+  const loginVisible = document.getElementById('login-screen').style.display !== 'none';
+  if(!loginVisible) return;
+  if(authMode === 'login') handleLogin(); else handleSignup();
+});
+
+/* ============================= TENANT DATA WIRING ============================= */
+function detachListeners(){
+  unsubscribers.forEach(fn => { try{ fn(); }catch(e){} });
+  unsubscribers = [];
+}
+
+function initTenant(uid, userEmail){
+  currentTenantId = uid;
+  document.getElementById('sidebar-user-email').textContent = userEmail || '';
+
+  const tenantRef = db.collection('tenants').doc(uid);
+
+  unsubscribers.push(tenantRef.onSnapshot(doc => {
+    if(!doc.exists){
+      // Compte authentifié mais sans structure associée : accès bloqué par sécurité.
+      STATE.settings.plan = 'essai';
+      STATE.settings.active = false;
+      STATE.settings.expired = false;
+      showPendingScreen();
+      return;
+    }
+    const data = doc.data() || {};
+    STATE.settings.businessName = data.businessName || 'Ma structure';
+    STATE.settings.businessLoc = data.businessLoc || '';
+    STATE.settings.plan = data.plan || 'essai';
+    STATE.settings.expiresAt = data.expiresAt || null;
+    const isExpired = data.active === true && data.expiresAt && new Date(data.expiresAt + 'T23:59:59') < new Date();
+    STATE.settings.active = data.active === true && !isExpired;
+    STATE.settings.expired = !!isExpired;
+    document.getElementById('sidebar-biz-name').textContent = STATE.settings.businessName;
+
+    if(STATE.settings.active){
+      hidePendingScreen();
+      if(document.getElementById('app').style.display !== 'none') render();
+    } else {
+      showPendingScreen();
+    }
+  }, err => showToast('Erreur de synchronisation (structure) : ' + err.message)));
+
+  unsubscribers.push(tenantRef.collection('products').onSnapshot(snap => {
+    STATE.products = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    render();
+  }, err => showToast('Erreur de synchronisation (produits) : ' + err.message)));
+
+  unsubscribers.push(tenantRef.collection('clients').onSnapshot(snap => {
+    STATE.clients = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    render();
+  }, err => showToast('Erreur de synchronisation (clients) : ' + err.message)));
+
+  unsubscribers.push(tenantRef.collection('sales').onSnapshot(snap => {
+    STATE.sales = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    render();
+  }, err => showToast('Erreur de synchronisation (ventes) : ' + err.message)));
+
+  unsubscribers.push(tenantRef.collection('stockEntries').onSnapshot(snap => {
+    STATE.stockEntries = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    render();
+  }, err => showToast('Erreur de synchronisation (entrées) : ' + err.message)));
+}
+
+function tenantRef(){ return db.collection('tenants').doc(currentTenantId); }
+
+function showPendingScreen(){
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('pending-plan-label').textContent = PLAN_LABELS[STATE.settings.plan] || STATE.settings.plan;
+  const titleEl = document.getElementById('pending-title');
+  const msgEl = document.getElementById('pending-message');
+  if(STATE.settings.expired){
+    titleEl.textContent = '⏳ Abonnement expiré';
+    msgEl.textContent = 'Votre forfait est arrivé à échéance le ' + fmtDate(STATE.settings.expiresAt) + '. Contactez l\u2019administrateur pour renouveler votre accès.';
+  } else {
+    titleEl.textContent = '⏳ Compte en attente d\u2019activation';
+    msgEl.textContent = 'Votre inscription a bien été enregistrée. Votre accès sera activé par l\u2019administrateur après confirmation du paiement de votre forfait.';
+  }
+  document.getElementById('pending-screen').style.display = 'flex';
+}
+function hidePendingScreen(){
+  document.getElementById('pending-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+/* ============================= SUPER-ADMIN ============================= */
+async function checkSuperAdmin(uid){
+  try{
+    const doc = await db.collection('admins').doc(uid).get();
+    return doc.exists;
+  }catch(e){
+    showToast('Diagnostic admin : ' + (e.code || '') + ' — ' + e.message);
+    return false;
+  }
+}
+
+function initAdminPanel(userEmail){
+  isSuperAdmin = true;
+  document.getElementById('sidebar-user-email').textContent = userEmail || '';
+  document.getElementById('sidebar-biz-name').textContent = 'Administration';
+  document.querySelector('.nav-item[data-view="admin"]').style.display = 'flex';
+  document.querySelectorAll('.nav-item:not([data-view="admin"])').forEach(el => el.style.display = 'none');
+  unsubscribers.push(db.collection('tenants').onSnapshot(snap => {
+    allTenants = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    if(currentView === 'admin') render();
+  }, err => showToast('Erreur de synchronisation (structures) : ' + err.message)));
+  document.getElementById('app').style.display = 'block';
+  setView('admin');
+}
+
+function renderAdmin(content, actions){
+  actions.innerHTML = '';
+  const now = new Date();
+  const rows = allTenants.map(t=>{
+    const planOptions = Object.keys(PLAN_LABELS).map(k=>`<option value="${k}" ${t.plan===k?'selected':''}>${PLAN_LABELS[k]}</option>`).join('');
+    const expired = t.active && t.expiresAt && new Date(t.expiresAt + 'T23:59:59') < now;
+    let statusTag;
+    if(expired) statusTag = '<span class="tag tag-low">Expiré</span>';
+    else if(t.active) statusTag = '<span class="tag tag-ok">Actif</span>';
+    else statusTag = '<span class="tag tag-low">En attente</span>';
+    return `<tr>
+      <td><strong>${escapeHtml(t.businessName||'—')}</strong></td>
+      <td>${escapeHtml(t.adminEmail||'—')}</td>
+      <td><select onchange="adminSetPlan('${t.id}', this.value)">${planOptions}</select></td>
+      <td><input type="date" value="${t.expiresAt||''}" onchange="adminSetExpiry('${t.id}', this.value)" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;"></td>
+      <td class="tright">${statusTag}</td>
+      <td class="tright">
+        ${t.active
+          ? `<button class="btn btn-sm btn-ghost" onclick="adminSetActive('${t.id}', false)">Désactiver</button>`
+          : `<button class="btn btn-sm btn-primary" onclick="adminSetActive('${t.id}', true)">Activer</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+  content.innerHTML = `
+    <div class="panel">
+      <table>
+        <thead><tr><th>Structure</th><th>Email admin</th><th>Forfait</th><th>Expire le</th><th class="tright">Statut</th><th class="tright">Action</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6"><div class="empty-state">Aucune structure inscrite pour l\u2019instant.</div></td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+function defaultExpiryDate(){
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0,10);
+}
+
+async function adminSetActive(tenantId, active){
+  try{
+    const update = { active };
+    if(active){
+      const t = allTenants.find(x=>x.id===tenantId);
+      if(t && !t.expiresAt){ update.expiresAt = defaultExpiryDate(); }
+    }
+    await db.collection('tenants').doc(tenantId).update(update);
+    showToast(active ? 'Structure activée (expire dans 30 jours par défaut, modifiable).' : 'Structure désactivée.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+async function adminSetPlan(tenantId, plan){
+  try{
+    await db.collection('tenants').doc(tenantId).update({ plan });
+    showToast('Forfait mis à jour.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+async function adminSetExpiry(tenantId, dateStr){
+  try{
+    await db.collection('tenants').doc(tenantId).update({ expiresAt: dateStr || null });
+    showToast('Date d\u2019expiration mise à jour.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+
+/* ============================= VIEW ROUTER ============================= */
+let currentView = 'dashboard';
+const VIEW_META = {
+  dashboard: ['Tableau de bord', "Aperçu de l'activité"],
+  produits: ['Produits', 'Catalogue et niveaux de stock'],
+  entrees: ['Entrées de stock', 'Réceptions et réapprovisionnements'],
+  ventes: ['Ventes', 'Enregistrement des ventes et reçus'],
+  clients: ['Clients', 'Base clients et historique'],
+  bilan: ['Bilan & statistiques', 'Chiffre d\u2019affaires et performance'],
+  parametres: ['Paramètres', 'Configuration de la structure'],
+  admin: ['Administration', 'Structures inscrites et forfaits']
+};
+
+function setView(v){
+  currentView = v;
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.view === v);
+  });
+  const meta = VIEW_META[v];
+  document.getElementById('view-title').textContent = meta[0];
+  document.getElementById('view-sub').textContent = meta[1];
+  render();
+}
+
+function render(){
+  if(document.getElementById('app').style.display === 'none') return;
+  const actions = document.getElementById('topbar-actions');
+  actions.innerHTML = '';
+  const content = document.getElementById('content');
+  if(currentView === 'dashboard') return renderDashboard(content, actions);
+  if(currentView === 'produits') return renderProduits(content, actions);
+  if(currentView === 'entrees') return renderEntrees(content, actions);
+  if(currentView === 'ventes') return renderVentes(content, actions);
+  if(currentView === 'clients') return renderClients(content, actions);
+  if(currentView === 'bilan') return renderBilan(content, actions);
+  if(currentView === 'parametres') return renderParametres(content, actions);
+  if(currentView === 'admin') return renderAdmin(content, actions);
+}
+
+/* ============================= DASHBOARD ============================= */
+function renderDashboard(content, actions){
+  const low = lowStockProducts();
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const salesToday = STATE.sales.filter(s => new Date(s.date) >= startToday);
+  const salesMonth = STATE.sales.filter(s => new Date(s.date) >= startMonth);
+  const caToday = salesToday.reduce((a,s)=>a+s.total,0);
+  const caMonth = salesMonth.reduce((a,s)=>a+s.total,0);
+  const stockValue = STATE.products.reduce((a,p)=> a + Number(p.stock) * Number(p.purchasePrice||0), 0);
+
+  let html = '';
+  if(low.length){
+    html += `<div class="alert-banner">⚠️ <span><b>${low.length}</b> produit(s) en stock faible.</span>
+      <button class="btn btn-sm btn-ghost" onclick="setView('produits')">Voir les produits</button></div>`;
+  }
+
+  html += `<div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Ventes aujourd'hui</div><div class="kpi-value num">${fmtMoney(caToday)}</div><div class="kpi-note">${salesToday.length} vente(s)</div></div>
+    <div class="kpi-card"><div class="kpi-label">Chiffre d'affaires du mois</div><div class="kpi-value num">${fmtMoney(caMonth)}</div><div class="kpi-note">${salesMonth.length} vente(s)</div></div>
+    <div class="kpi-card"><div class="kpi-label">Valeur du stock</div><div class="kpi-value num">${fmtMoney(stockValue)}</div><div class="kpi-note">${STATE.products.length} référence(s)</div></div>
+    <div class="kpi-card"><div class="kpi-label">Alertes stock faible</div><div class="kpi-value num ${low.length? 'warn':''}">${low.length}</div><div class="kpi-note">sur seuil défini par produit</div></div>
+  </div>`;
+
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
+    const next = new Date(d.getTime()+86400000);
+    const total = STATE.sales.filter(s=>{ const t=new Date(s.date); return t>=d && t<next; }).reduce((a,s)=>a+s.total,0);
+    days.push({label: d.toLocaleDateString('fr-FR',{weekday:'short'}).replace('.',''), total});
+  }
+  const maxDay = Math.max(1, ...days.map(d=>d.total));
+  const barsHtml = days.map(d => `<div class="bar-col"><div style="font-size:10px;color:var(--ink-soft)">${d.total? fmtNum(Math.round(d.total/1000))+'k':''}</div><div class="bar" style="height:${Math.max(3, (d.total/maxDay)*100)}px"></div><div class="bar-lbl">${d.label}</div></div>`).join('');
+
+  const recentSales = [...STATE.sales].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,6);
+  const recentRows = recentSales.length ? recentSales.map(s=>{
+    const client = s.clientId ? findClient(s.clientId) : null;
+    return `<tr>
+      <td>${fmtDateTime(s.date)}</td>
+      <td>${escapeHtml(s.clientId ? (client ? client.name : 'Client supprimé') : 'Client de passage')}</td>
+      <td class="tright num">${fmtMoney(s.total)}</td>
+      <td class="tright"><button class="btn btn-sm btn-ghost" onclick="openReceipt('${s.id}')">Reçu</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="4" class="empty-state">Aucune vente enregistrée pour l'instant.</td></tr>`;
+
+  const lowRows = low.length ? low.slice(0,6).map(p=>`<tr class="row-low">
+      <td>${escapeHtml(p.name)}</td>
+      <td class="tright num">${fmtNum(p.stock)} ${escapeHtml(p.unit||'u.')}</td>
+      <td class="tright num">${fmtNum(p.alertThreshold)}</td>
+    </tr>`).join('') : `<tr><td colspan="3" class="empty-state" style="padding:20px 10px;">Aucune alerte. Tous les stocks sont au-dessus du seuil.</td></tr>`;
+
+  html += `<div class="panel-row">
+    <div class="panel">
+      <div class="panel-head"><h3>Ventes des 7 derniers jours</h3></div>
+      <div class="panel-body">
+        <div class="bars">${barsHtml}</div>
+      </div>
+      <div class="panel-head" style="border-top:1px solid var(--line);"><h3>Ventes récentes</h3><button class="btn btn-sm btn-ghost" onclick="setView('ventes')">Tout voir</button></div>
+      <div class="panel-body" style="padding:0 18px 12px;">
+        <table><thead><tr><th>Date</th><th>Client</th><th class="tright">Montant</th><th></th></tr></thead>
+        <tbody>${recentRows}</tbody></table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Stock faible</h3></div>
+      <div class="panel-body" style="padding-top:0;">
+        <table><thead><tr><th>Produit</th><th class="tright">Stock</th><th class="tright">Seuil</th></tr></thead>
+        <tbody>${lowRows}</tbody></table>
+      </div>
+    </div>
+  </div>`;
+
+  content.innerHTML = html;
+}
+
+/* ============================= PRODUITS ============================= */
+let produitSearch = '';
+function renderProduits(content, actions){
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openProductModal()">＋ Nouveau produit</button>`;
+
+  const q = produitSearch.trim().toLowerCase();
+  const list = STATE.products.filter(p => !q || p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q));
+
+  let rows = list.map(p=>{
+    const low = Number(p.stock) <= Number(p.alertThreshold);
+    return `<tr class="${low?'row-low':''}">
+      <td><strong>${escapeHtml(p.name)}</strong></td>
+      <td>${escapeHtml(p.category||'—')}</td>
+      <td class="tright num">${fmtMoney(p.purchasePrice)}</td>
+      <td class="tright num">${fmtMoney(p.salePrice)}</td>
+      <td class="tright num">${fmtNum(p.stock)} ${escapeHtml(p.unit||'u.')}</td>
+      <td class="tright">${low ? '<span class="tag tag-low">Stock faible</span>' : '<span class="tag tag-ok">OK</span>'}</td>
+      <td class="tright">
+        <button class="btn btn-sm btn-ghost" onclick="openProductModal('${p.id}')">Modifier</button>
+        <button class="btn btn-sm btn-ghost" onclick="deleteProduct('${p.id}')">Suppr.</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  if(!list.length){
+    rows = `<tr><td colspan="7"><div class="empty-state"><div class="ic">📦</div>${STATE.products.length? 'Aucun produit ne correspond à la recherche.' : "Aucun produit pour l'instant. Ajoutez votre premier produit."}</div></td></tr>`;
+  }
+
+  content.innerHTML = `
+    <div class="toolbar">
+      <div class="search-box"><input type="text" placeholder="Rechercher un produit ou une catégorie…" value="${escapeHtml(produitSearch)}" oninput="produitSearch=this.value; renderProduits(document.getElementById('content'), document.getElementById('topbar-actions'))"></div>
+      <div class="spacer"></div>
+      <div style="font-size:12.5px;color:var(--ink-soft)">${list.length} référence(s)</div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Produit</th><th>Catégorie</th><th class="tright">Prix d'achat</th><th class="tright">Prix de vente</th><th class="tright">Stock</th><th class="tright">Statut</th><th class="tright">Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function openProductModal(id){
+  const p = id ? findProduct(id) : null;
+  document.getElementById('modal-title').textContent = p ? 'Modifier le produit' : 'Nouveau produit';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Nom du produit</label><input id="pf-name" value="${p?escapeHtml(p.name):''}" placeholder="Ex : Souris sans fil Logitech"></div>
+    <div class="row2">
+      <div class="field"><label>Catégorie</label><input id="pf-cat" value="${p?escapeHtml(p.category||''):''}" placeholder="Ex : Périphériques"></div>
+      <div class="field"><label>Unité</label><input id="pf-unit" value="${p?escapeHtml(p.unit||'unité'):'unité'}" placeholder="unité, carton…"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Prix d'achat (FCFA)</label><input id="pf-buy" type="number" min="0" value="${p?p.purchasePrice:''}"></div>
+      <div class="field"><label>Prix de vente (FCFA)</label><input id="pf-sell" type="number" min="0" value="${p?p.salePrice:''}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Stock ${p?'actuel':'initial'}</label><input id="pf-stock" type="number" min="0" value="${p?p.stock:0}"></div>
+      <div class="field"><label>Seuil d'alerte</label><input id="pf-thresh" type="number" min="0" value="${p?p.alertThreshold:3}"></div>
+    </div>
+  `;
+  document.getElementById('modal-foot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-primary" onclick="saveProduct('${p?p.id:''}')">Enregistrer</button>
+  `;
+  document.getElementById('modal-box').classList.remove('wide');
+  openModal();
+}
+
+async function saveProduct(id){
+  const name = document.getElementById('pf-name').value.trim();
+  const category = document.getElementById('pf-cat').value.trim();
+  const unit = document.getElementById('pf-unit').value.trim() || 'unité';
+  const purchasePrice = parseFloat(document.getElementById('pf-buy').value) || 0;
+  const salePrice = parseFloat(document.getElementById('pf-sell').value) || 0;
+  const stock = parseFloat(document.getElementById('pf-stock').value) || 0;
+  const alertThreshold = parseFloat(document.getElementById('pf-thresh').value) || 0;
+
+  if(!name){ showToast('Le nom du produit est requis.'); return; }
+  const data = {name, category, unit, purchasePrice, salePrice, stock, alertThreshold};
+
+  try{
+    if(id){
+      await tenantRef().collection('products').doc(id).update(data);
+      showToast('Produit mis à jour.');
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await tenantRef().collection('products').add(data);
+      showToast('Produit ajouté.');
+    }
+    closeModal();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+async function deleteProduct(id){
+  const p = findProduct(id);
+  if(!p) return;
+  if(!confirm(`Supprimer "${p.name}" ? Cette action est irréversible.`)) return;
+  try{
+    await tenantRef().collection('products').doc(id).delete();
+    showToast('Produit supprimé.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+/* ============================= ENTREES DE STOCK ============================= */
+function renderEntrees(content, actions){
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openEntryModal()">＋ Nouvelle entrée</button>`;
+
+  const entries = [...STATE.stockEntries].sort((a,b)=> new Date(b.date)-new Date(a.date));
+  let rows = entries.map(e=>{
+    const p = findProduct(e.productId);
+    return `<tr>
+      <td>${fmtDateTime(e.date)}</td>
+      <td>${p?escapeHtml(p.name):'<em>Produit supprimé</em>'}</td>
+      <td class="tright num">+${fmtNum(e.qty)}</td>
+      <td>${escapeHtml(e.note||'—')}</td>
+    </tr>`;
+  }).join('');
+  if(!entries.length){
+    rows = `<tr><td colspan="4"><div class="empty-state"><div class="ic">➕</div>Aucune entrée de stock enregistrée.</div></td></tr>`;
+  }
+
+  content.innerHTML = `
+    <div class="panel">
+      <table>
+        <thead><tr><th>Date</th><th>Produit</th><th class="tright">Quantité ajoutée</th><th>Note</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function openEntryModal(){
+  if(!STATE.products.length){ showToast('Ajoutez d\u2019abord un produit avant une entrée de stock.'); return; }
+  document.getElementById('modal-title').textContent = 'Nouvelle entrée de stock';
+  const options = STATE.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} (stock actuel : ${fmtNum(p.stock)})</option>`).join('');
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Produit</label><select id="ef-product">${options}</select></div>
+    <div class="field"><label>Quantité à ajouter</label><input id="ef-qty" type="number" min="1" value="1"></div>
+    <div class="field"><label>Note (fournisseur, référence…)</label><input id="ef-note" placeholder="Facultatif"></div>
+  `;
+  document.getElementById('modal-foot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-primary" onclick="saveEntry()">Enregistrer l'entrée</button>
+  `;
+  document.getElementById('modal-box').classList.remove('wide');
+  openModal();
+}
+
+async function saveEntry(){
+  const productId = document.getElementById('ef-product').value;
+  const qty = parseFloat(document.getElementById('ef-qty').value);
+  const note = document.getElementById('ef-note').value.trim();
+  if(!qty || qty <= 0){ showToast('Quantité invalide.'); return; }
+  const p = findProduct(productId);
+  if(!p){ showToast('Produit introuvable.'); return; }
+
+  try{
+    const batch = db.batch();
+    const productDocRef = tenantRef().collection('products').doc(productId);
+    batch.update(productDocRef, { stock: firebase.firestore.FieldValue.increment(qty) });
+    const entryDocRef = tenantRef().collection('stockEntries').doc();
+    batch.set(entryDocRef, { productId, qty, note, date: todayISO() });
+    await batch.commit();
+    closeModal();
+    showToast('Entrée de stock enregistrée.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+/* ============================= VENTES ============================= */
+let saleLines = [];
+function renderVentes(content, actions){
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openSaleModal()" ${STATE.products.length?'':'disabled'}>＋ Nouvelle vente</button>`;
+
+  const sales = [...STATE.sales].sort((a,b)=> new Date(b.date)-new Date(a.date));
+  let rows = sales.map(s=>{
+    const client = s.clientId ? findClient(s.clientId) : null;
+    return `<tr>
+      <td>${fmtDateTime(s.date)}</td>
+      <td>${escapeHtml(s.clientId ? (client ? client.name : 'Client supprimé') : 'Client de passage')}</td>
+      <td>${s.items.length} article(s)</td>
+      <td class="tright num">${fmtMoney(s.total)}</td>
+      <td class="tright"><button class="btn btn-sm btn-ghost" onclick="openReceipt('${s.id}')">Voir le reçu</button></td>
+    </tr>`;
+  }).join('');
+  if(!sales.length){
+    rows = `<tr><td colspan="5"><div class="empty-state"><div class="ic">🛒</div>Aucune vente enregistrée pour l'instant.</div></td></tr>`;
+  }
+
+  content.innerHTML = `
+    <div class="panel">
+      <table>
+        <thead><tr><th>Date</th><th>Client</th><th>Articles</th><th class="tright">Total</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function openSaleModal(){
+  if(!STATE.products.length){ showToast('Ajoutez d\u2019abord des produits.'); return; }
+  saleLines = [{ productId: STATE.products[0].id, qty: 1 }];
+  document.getElementById('modal-title').textContent = 'Nouvelle vente';
+  const clientOptions = `<option value="">Client de passage</option>` + STATE.clients.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Client</label><select id="sf-client">${clientOptions}</select></div>
+    <div id="sale-lines"></div>
+    <button class="btn btn-sm btn-ghost" onclick="addSaleLine()">＋ Ajouter un article</button>
+    <div class="sale-total-row"><span>Total</span><span class="amt" id="sale-total-amt">0 FCFA</span></div>
+  `;
+  document.getElementById('modal-foot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-primary" onclick="saveSale()">Enregistrer la vente</button>
+  `;
+  document.getElementById('modal-box').classList.add('wide');
+  renderSaleLines();
+  openModal();
+}
+
+function productOptionsHtml(selectedId){
+  return STATE.products.map(p=>`<option value="${p.id}" ${p.id===selectedId?'selected':''}>${escapeHtml(p.name)} — stock ${fmtNum(p.stock)}</option>`).join('');
+}
+
+function renderSaleLines(){
+  const wrap = document.getElementById('sale-lines');
+  wrap.innerHTML = saleLines.map((line, i)=>{
+    const p = findProduct(line.productId);
+    const unitPrice = p ? p.salePrice : 0;
+    const lineTotal = unitPrice * (line.qty||0);
+    return `<div class="line-item">
+      <select onchange="saleLines[${i}].productId=this.value; renderSaleLines();">${productOptionsHtml(line.productId)}</select>
+      <input type="number" min="1" value="${line.qty}" onchange="saleLines[${i}].qty=parseFloat(this.value)||0; renderSaleLines();">
+      <div class="line-total num">${fmtMoney(lineTotal)}</div>
+      <button class="mini-x" onclick="removeSaleLine(${i})" title="Retirer">✕</button>
+    </div>`;
+  }).join('');
+  const total = saleLines.reduce((a,line)=>{
+    const p = findProduct(line.productId);
+    return a + (p ? p.salePrice : 0) * (line.qty||0);
+  },0);
+  document.getElementById('sale-total-amt').textContent = fmtMoney(total);
+}
+function addSaleLine(){
+  if(!STATE.products.length) return;
+  saleLines.push({ productId: STATE.products[0].id, qty: 1 });
+  renderSaleLines();
+}
+function removeSaleLine(i){
+  saleLines.splice(i,1);
+  renderSaleLines();
+}
+
+async function saveSale(){
+  const clientId = document.getElementById('sf-client').value || null;
+  if(!saleLines.length){ showToast('Ajoutez au moins un article.'); return; }
+
+  const agg = {};
+  for(const line of saleLines){
+    if(!line.qty || line.qty <= 0){ showToast('Quantité invalide sur une ligne.'); return; }
+    agg[line.productId] = (agg[line.productId]||0) + line.qty;
+  }
+  for(const pid in agg){
+    const p = findProduct(pid);
+    if(!p){ showToast('Un produit sélectionné est introuvable.'); return; }
+    if(agg[pid] > Number(p.stock)){
+      showToast(`Stock insuffisant pour "${p.name}" (disponible : ${p.stock}).`);
+      return;
+    }
+  }
+
+  const items = saleLines.map(line=>{
+    const p = findProduct(line.productId);
+    return { productId: p.id, name: p.name, qty: line.qty, unitPrice: p.salePrice };
+  });
+  const total = items.reduce((a,it)=> a + it.qty*it.unitPrice, 0);
+
+  try{
+    const batch = db.batch();
+    for(const pid in agg){
+      batch.update(tenantRef().collection('products').doc(pid), { stock: firebase.firestore.FieldValue.increment(-agg[pid]) });
+    }
+    const saleDocRef = tenantRef().collection('sales').doc();
+    const saleData = { date: todayISO(), clientId, items, total };
+    batch.set(saleDocRef, saleData);
+    await batch.commit();
+    closeModal();
+    showToast('Vente enregistrée.');
+    openReceipt(saleDocRef.id, saleData);
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+/* ============================= RECU / FACTURE ============================= */
+function openReceipt(saleId, fallbackData){
+  const s = STATE.sales.find(x=>x.id===saleId) || (fallbackData ? Object.assign({id:saleId}, fallbackData) : null);
+  if(!s) return;
+  const client = s.clientId ? findClient(s.clientId) : null;
+  document.getElementById('modal-title').textContent = 'Reçu de vente';
+  const itemsHtml = s.items.map(it=>`
+    <div class="receipt-row">
+      <span class="nm">${escapeHtml(it.name)} x${fmtNum(it.qty)}</span>
+      <span>${fmtMoney(it.qty*it.unitPrice)}</span>
+    </div>`).join('');
+  document.getElementById('modal-body').innerHTML = `
+    <div id="print-area">
+    <div class="receipt">
+      <div class="receipt-head">
+        <div class="biz">${escapeHtml(STATE.settings.businessName)}</div>
+        <div class="loc">${escapeHtml(STATE.settings.businessLoc)}</div>
+      </div>
+      <hr>
+      <div class="receipt-row"><span>Reçu N°</span><span>${s.id.slice(-8).toUpperCase()}</span></div>
+      <div class="receipt-row"><span>Date</span><span>${fmtDateTime(s.date)}</span></div>
+      <div class="receipt-row"><span>Client</span><span>${escapeHtml(client?client.name:'Client de passage')}</span></div>
+      <hr>
+      <div class="receipt-items">${itemsHtml}</div>
+      <hr>
+      <div class="receipt-row receipt-total"><span>TOTAL</span><span>${fmtMoney(s.total)}</span></div>
+      <div class="receipt-foot">Merci pour votre confiance.</div>
+    </div>
+    </div>
+  `;
+  document.getElementById('modal-foot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
+  `;
+  document.getElementById('modal-box').classList.remove('wide');
+  openModal();
+}
+
+/* ============================= CLIENTS ============================= */
+let clientSearch = '';
+function renderClients(content, actions){
+  actions.innerHTML = `<button class="btn btn-primary" onclick="openClientModal()">＋ Nouveau client</button>`;
+
+  const q = clientSearch.trim().toLowerCase();
+  const list = STATE.clients.filter(c => !q || c.name.toLowerCase().includes(q) || (c.phone||'').includes(q));
+
+  let rows = list.map(c=>{
+    const clientSales = STATE.sales.filter(s=>s.clientId===c.id);
+    const totalSpent = clientSales.reduce((a,s)=>a+s.total,0);
+    return `<tr>
+      <td><strong>${escapeHtml(c.name)}</strong></td>
+      <td>${escapeHtml(c.phone||'—')}</td>
+      <td>${escapeHtml(c.address||'—')}</td>
+      <td class="tright num">${clientSales.length}</td>
+      <td class="tright num">${fmtMoney(totalSpent)}</td>
+      <td class="tright">
+        <button class="btn btn-sm btn-ghost" onclick="openClientModal('${c.id}')">Modifier</button>
+        <button class="btn btn-sm btn-ghost" onclick="deleteClient('${c.id}')">Suppr.</button>
+      </td>
+    </tr>`;
+  }).join('');
+  if(!list.length){
+    rows = `<tr><td colspan="6"><div class="empty-state"><div class="ic">☺</div>${STATE.clients.length? 'Aucun client ne correspond à la recherche.' : "Aucun client pour l'instant."}</div></td></tr>`;
+  }
+
+  content.innerHTML = `
+    <div class="toolbar">
+      <div class="search-box"><input type="text" placeholder="Rechercher un client (nom, téléphone)…" value="${escapeHtml(clientSearch)}" oninput="clientSearch=this.value; renderClients(document.getElementById('content'), document.getElementById('topbar-actions'))"></div>
+      <div class="spacer"></div>
+      <div style="font-size:12.5px;color:var(--ink-soft)">${list.length} client(s)</div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Nom</th><th>Téléphone</th><th>Adresse</th><th class="tright">Achats</th><th class="tright">Total dépensé</th><th class="tright">Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function openClientModal(id){
+  const c = id ? findClient(id) : null;
+  document.getElementById('modal-title').textContent = c ? 'Modifier le client' : 'Nouveau client';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Nom complet</label><input id="cf-name" value="${c?escapeHtml(c.name):''}"></div>
+    <div class="field"><label>Téléphone</label><input id="cf-phone" value="${c?escapeHtml(c.phone||''):''}" placeholder="Ex : 07 00 00 00 00"></div>
+    <div class="field"><label>Adresse</label><input id="cf-address" value="${c?escapeHtml(c.address||''):''}" placeholder="Quartier, ville"></div>
+  `;
+  document.getElementById('modal-foot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-primary" onclick="saveClient('${c?c.id:''}')">Enregistrer</button>
+  `;
+  document.getElementById('modal-box').classList.remove('wide');
+  openModal();
+}
+
+async function saveClient(id){
+  const name = document.getElementById('cf-name').value.trim();
+  const phone = document.getElementById('cf-phone').value.trim();
+  const address = document.getElementById('cf-address').value.trim();
+  if(!name){ showToast('Le nom du client est requis.'); return; }
+  const data = {name, phone, address};
+  try{
+    if(id){
+      await tenantRef().collection('clients').doc(id).update(data);
+      showToast('Client mis à jour.');
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await tenantRef().collection('clients').add(data);
+      showToast('Client ajouté.');
+    }
+    closeModal();
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+async function deleteClient(id){
+  const c = findClient(id);
+  if(!c) return;
+  if(!confirm(`Supprimer "${c.name}" ?`)) return;
+  try{
+    await tenantRef().collection('clients').doc(id).delete();
+    showToast('Client supprimé.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+
+/* ============================= BILAN / STATISTIQUES ============================= */
+let bilanRange = 30;
+function renderBilan(content, actions){
+  actions.innerHTML = `
+    <select onchange="bilanRange=parseInt(this.value); render();" style="padding:8px 10px;border:1px solid var(--line);border-radius:7px;">
+      <option value="7" ${bilanRange===7?'selected':''}>7 derniers jours</option>
+      <option value="30" ${bilanRange===30?'selected':''}>30 derniers jours</option>
+      <option value="365" ${bilanRange===365?'selected':''}>12 derniers mois</option>
+    </select>`;
+
+  const since = new Date(Date.now() - bilanRange*86400000);
+  const salesInRange = STATE.sales.filter(s => new Date(s.date) >= since);
+  const ca = salesInRange.reduce((a,s)=>a+s.total,0);
+
+  let cout = 0;
+  const productTotals = {};
+  salesInRange.forEach(s=>{
+    s.items.forEach(it=>{
+      const p = findProduct(it.productId);
+      const purchase = p ? Number(p.purchasePrice||0) : 0;
+      cout += purchase * it.qty;
+      productTotals[it.name] = (productTotals[it.name]||0) + it.qty*it.unitPrice;
+    });
+  });
+  const marge = ca - cout;
+
+  const top = Object.entries(productTotals).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxTop = Math.max(1, ...top.map(t=>t[1]));
+  const topHtml = top.length ? top.map(([name,val])=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;"><span>${escapeHtml(name)}</span><span class="num">${fmtMoney(val)}</span></div>
+      <div style="background:var(--teal-tint);border-radius:5px;height:8px;"><div style="background:var(--teal);height:8px;border-radius:5px;width:${(val/maxTop)*100}%;"></div></div>
+    </div>`).join('') : `<div class="empty-state">Aucune vente sur la période.</div>`;
+
+  const avgBasket = salesInRange.length ? ca/salesInRange.length : 0;
+
+  content.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Chiffre d'affaires</div><div class="kpi-value num">${fmtMoney(ca)}</div><div class="kpi-note">${salesInRange.length} vente(s)</div></div>
+      <div class="kpi-card"><div class="kpi-label">Coût des marchandises vendues</div><div class="kpi-value num">${fmtMoney(cout)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Marge brute</div><div class="kpi-value num">${fmtMoney(marge)}</div><div class="kpi-note">${ca? Math.round((marge/ca)*100):0}% de marge</div></div>
+      <div class="kpi-card"><div class="kpi-label">Panier moyen</div><div class="kpi-value num">${fmtMoney(avgBasket)}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Produits les plus vendus (par valeur)</h3></div>
+      <div class="panel-body">${topHtml}</div>
+    </div>`;
+}
+
+/* ============================= PARAMETRES ============================= */
+function renderParametres(content, actions){
+  const user = auth.currentUser;
+  content.innerHTML = `
+    <div class="panel" style="max-width:480px;">
+      <div class="panel-head"><h3>Forfait</h3></div>
+      <div class="panel-body">
+        <div class="field"><label>Forfait actuel</label><input value="${escapeHtml(PLAN_LABELS[STATE.settings.plan]||STATE.settings.plan)}" disabled></div>
+        <div class="field"><label>Statut</label><input value="${STATE.settings.active?'Actif':'En attente d\u2019activation'}" disabled></div>
+        ${STATE.settings.expiresAt ? `<div class="field"><label>Expire le</label><input value="${fmtDate(STATE.settings.expiresAt)}" disabled></div>` : ''}
+      </div>
+    </div>
+    <div class="panel" style="max-width:480px;margin-top:16px;">
+      <div class="panel-head"><h3>Informations de la structure</h3></div>
+      <div class="panel-body">
+        <div class="field"><label>Nom affiché sur les reçus</label><input id="set-bizname" value="${escapeHtml(STATE.settings.businessName)}"></div>
+        <div class="field"><label>Localisation</label><input id="set-bizloc" value="${escapeHtml(STATE.settings.businessLoc)}"></div>
+        <button class="btn btn-primary" onclick="saveBizInfo()">Enregistrer</button>
+      </div>
+    </div>
+    <div class="panel" style="max-width:480px;margin-top:16px;">
+      <div class="panel-head"><h3>Compte administrateur</h3></div>
+      <div class="panel-body">
+        <div class="field"><label>Email de connexion</label><input value="${escapeHtml(user?user.email:'')}" disabled></div>
+        <div class="field"><label>Nouveau mot de passe</label><input id="set-newpass" type="password" placeholder="Minimum 6 caractères"></div>
+        <button class="btn btn-primary" onclick="changePassword()">Mettre à jour le mot de passe</button>
+        <div class="login-hint" style="border-top:none;margin-top:10px;padding-top:0;">Ce sont ces mêmes identifiants que doivent utiliser vos employés pour accéder aux données de la structure depuis un autre poste.</div>
+      </div>
+    </div>
+    <div class="panel" style="max-width:480px;margin-top:16px;">
+      <div class="panel-head"><h3>Identifiant technique</h3></div>
+      <div class="panel-body">
+        <div class="field"><label>ID utilisateur (UID)</label><input value="${escapeHtml(user?user.uid:'')}" disabled></div>
+        <div class="login-hint" style="border-top:none;margin-top:0;padding-top:0;">Cet identifiant sert uniquement à vous désigner comme administrateur technique dans Firestore. Sans intérêt pour une utilisation normale.</div>
+      </div>
+    </div>`;
+}
+async function saveBizInfo(){
+  const businessName = document.getElementById('set-bizname').value.trim() || 'Ma structure';
+  const businessLoc = document.getElementById('set-bizloc').value.trim();
+  try{
+    await tenantRef().update({businessName, businessLoc});
+    showToast('Informations enregistrées.');
+  }catch(e){ showToast('Erreur : ' + e.message); }
+}
+async function changePassword(){
+  const val = document.getElementById('set-newpass').value;
+  if(!val || val.length < 6){ showToast('Le mot de passe doit contenir au moins 6 caractères.'); return; }
+  try{
+    await auth.currentUser.updatePassword(val);
+    document.getElementById('set-newpass').value = '';
+    showToast('Mot de passe mis à jour.');
+  }catch(e){
+    if(e.code === 'auth/requires-recent-login'){
+      showToast('Reconnectez-vous puis réessayez (opération sensible).');
+    } else {
+      showToast('Erreur : ' + e.message);
+    }
+  }
+}
+
+/* ============================= MODAL HELPERS ============================= */
+function openModal(){ document.getElementById('modal-veil').classList.add('show'); }
+function closeModal(){ document.getElementById('modal-veil').classList.remove('show'); }
+document.getElementById('modal-veil').addEventListener('click', (e)=>{
+  if(e.target.id === 'modal-veil') closeModal();
+});
+
+/* ============================= BOOT ============================= */
+(function boot(){
+  document.getElementById('loading-veil').style.display = 'none';
+
+  if(CONFIG_IS_PLACEHOLDER){
+    document.getElementById('setup-screen').style.display = 'flex';
+    return;
+  }
+
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if(err.code === 'failed-precondition'){
+      // Plusieurs onglets ouverts sans synchronizeTabs — cas rare, on ignore silencieusement.
+    } else if(err.code === 'unimplemented'){
+      showToast('Ce navigateur ne prend pas en charge le mode hors ligne.');
+    }
+  });
+
+  auth.onAuthStateChanged(async user => {
+    if(user){
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('pending-screen').style.display = 'none';
+      const admin = await checkSuperAdmin(user.uid);
+      if(admin){
+        initAdminPanel(user.email);
+      } else {
+        isSuperAdmin = false;
+        document.getElementById('app').style.display = 'block';
+        initTenant(user.uid, user.email);
+        setView('dashboard');
+      }
+    } else {
+      detachListeners();
+      currentTenantId = null;
+      isSuperAdmin = false;
+      document.querySelectorAll('.nav-item').forEach(el => { el.style.display = 'flex'; });
+      document.querySelector('.nav-item[data-view="admin"]').style.display = 'none';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('pending-screen').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+  });
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* mode hors-ligne indisponible, on continue normalement */ });
+  });
+}
+</script>
+</body>
+</html>
